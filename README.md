@@ -1,1 +1,5 @@
 # Baekjoon
+
+C / C++ 
+
+Python
