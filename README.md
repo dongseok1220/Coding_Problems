@@ -1,5 +1,5 @@
 # Baekjoon
 
-C / C++ 
+### [C](https://github.com/sgu20191619/Baekjoon/tree/main/C) 
 
-Python
+### [Python](https://github.com/sgu20191619/Baekjoon/tree/main/Python)
