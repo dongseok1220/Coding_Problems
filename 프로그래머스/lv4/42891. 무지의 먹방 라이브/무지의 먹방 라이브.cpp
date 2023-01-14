@@ -6,32 +6,27 @@
 using namespace std;
 
 int solution(vector<int> food_times, long long k) {
-    int answer = -1;
-    // N log N 으로 해결해야한다! 
-    // 단순 반복 탐색으로는 N^2
-    // log N 이기 위해서 트리 구조 사용? 
-    
+    int answer = -1;   
     long long len = food_times.size();
+    
     vector<int> arr(len); 
-    copy(food_times.begin(), food_times.end(), arr.begin());
     vector<pair<int, int>> ans; 
+    
+    copy(food_times.begin(), food_times.end(), arr.begin());
+    
     for (int i=0; i<len; i++)
         ans.push_back(make_pair(food_times[i], i));
     
     sort(ans.begin(), ans.end()); 
     
     long long sum = 0;
-    for (int i = 0; i < len; i++)
-        sum += food_times[i];
-    if (sum <= k) return -1;
-    
     long long min = 0, index = 0,cur = 0, i=0;
     long long cnt = len; 
     long long acc = 0; // 누적 변수 
     
- 
-    
     while(k >= cnt) {
+        if (index >= len) return -1; // 모든 음식 다 먹을 경우 
+        
         // for (i=0; i<len; i++) 
         //     cout << ans[i].first << " ";
         // cout << endl; 
@@ -45,7 +40,7 @@ int solution(vector<int> food_times, long long k) {
             k = k % cnt;         
         }
         else k -= sum; // 반복 가능 -> -해준다. 
-
+        
         acc += min;
         //cout << "최소 : " << min << " 누적 : " << acc << " 시간 : " << k << endl; 
         
