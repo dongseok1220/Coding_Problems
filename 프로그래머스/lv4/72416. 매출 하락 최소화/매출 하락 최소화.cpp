@@ -17,8 +17,6 @@ int solution(vector<int> sales, vector<vector<int>> links) {
     for (int i=0; i<=len; i++)
         DP[i] = new int[2] {0,}; // DP[i][0]은 팀장이 참석 X, DP[i][1]은 팀장이 참석 O 
     
-    sort(links.begin(), links.end()); 
-
     vector<int> visit(len+1), child(len+1), sum_child(len+1), check(len+1);
     fill(visit.begin(), visit.end(), 0); // 방문 여부 DFS를 위한 벡터 
     fill(child.begin(), child.end(), 0); // 자식노드의 유무
@@ -62,8 +60,12 @@ int solution(vector<int> sales, vector<vector<int>> links) {
     
         if (flag == 0 ) {
             int i = t.back();
-            DP[i][1] = sales[i-1] + sum_child[i];
-            if (check[i] == -1) {
+            // i번째 노드가 참석하면 자식들은 별로 신경 X 
+            DP[i][1] = sales[i-1] + sum_child[i]; 
+            // 반면 자기 자신이 참석하지 않는다면 2가지 경우가 존재! 
+            // 우선, 자기 자식의 노드들 중 한명이라도 sum_child[i]를 계산하는 과정에서 포함되었다면 dp[i][1]은 sum_child[i]가 된다!
+            // 하지만, sum_child[i]의 계산과정에서 자기 자식의 노드가 한명도 포함되지 않았다면 자식 노드들 중 가장 MIN값을 찾아 더해주어야 한다! 
+            if (check[i] == -1) { 
                 DP[i][0] = sum_child[i];
             }     
             else {
@@ -74,7 +76,10 @@ int solution(vector<int> sales, vector<vector<int>> links) {
         
             sum_child[p] += MIN(DP[i][0], DP[i][1]); 
             
-            if (DP[i][0] < DP[i][1]) {
+            // 부모노드의 자식노드 중 계산 과정에서 한번이라도 DP[i][1] < DP[i][0] 을 만족한다면, 자기 자식의 노드가 적어도 한번은 포함되었다는 얘기다.
+            // 따라서, check[p] = -1이라면 DP[i][0] = sum_child[i] 값이 될 것이다. 
+            // 반면, 한번이라도 DP[i][0] > DP[i][1] 이 된적이없다면 자식 노드에서 DP[i][1] - DP[i][0] 값 중 가장 작은 값을 넘겨준다. -> 자식 노드 중 최소 값을 의미
+            if (DP[i][0] < DP[i][1]) { 
                 if (check[p] == -1) continue;
                 else if (check[p] == 0) check[p] = DP[i][1] - DP[i][0];
                 else check[p] = MIN(DP[i][1] - DP[i][0], check[p]); 
