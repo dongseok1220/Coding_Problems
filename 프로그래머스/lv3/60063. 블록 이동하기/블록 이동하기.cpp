@@ -1,89 +1,134 @@
 #include <string>
+#include <cstring>
 #include <vector>
 #include <queue>
-#include <cstring>
-#include <algorithm>
+#include <iostream> 
+
 using namespace std;
-struct robot {
-	int time;
-	int x;
-	int y;
-	int type; // 0 : 가로, 1 : 세로
+
+// 로봇의 움직임은 총 8가지가 가능하다.
+// 따라서, 기존 BFS의 방문배열과 다르게 3차원 배열로 한다. 또한 queue를 사용함
+// BFS로 구현할 것이다. 따라서 현재 위치에서 상/하/좌/우 및 회전이 가능할 경우
+// 가능한 모든 위치를 push해줌 
+
+struct Robot{
+    int y,x; // 로봇의 좌표이며, (y,x)로 생각한다. 
+    int state; // 0이면 가로 1이면 세로를 의미한다. 
+    int ans; 
 };
-bool check(int x, int y, int type);
-int visit[101][101][2]; // 0 : 가로, 1 : 세로
-int dx[] = { -1, 1, 0, 0 }; //상 하 좌 우
-int dy[] = { 0, 0, -1, 1 };
-vector<vector<int> > table;
 
-
-bool check(int x, int y, int type) { // 범위를 벗어나거나, 벽에 부딪히면 false
-	int N = table.size();
-	if (type == 0) {//가로
-		if (x < 0 || y < 0 || x >= N || y + 1 >= N) return false;
-		if (table[x][y] || table[x][y + 1]) return false;
-	}
-	else {//세로
-		if (x < 0 || y < 0 || x + 1 >= N || y >= N) return false;
-		if (table[x][y] || table[x + 1][y]) return false;
-	}
-	return true;
+bool check_pos(vector<vector<int>> board, int ny, int nx, int state, int N) {
+    // 가로 일 경우 ny,nx와 ny, nx+1 검사 
+    if  (state == 0) {
+        if (nx < 0 || ny < 0 || nx + 1 >= N || ny >= N) return false; 
+        if (board[ny][nx] || board[ny][nx+1]) return false; 
+    }
+    // 세로 일 경우 ny,nx와 ny+1, nx 검사 
+    else {
+        if (nx < 0 || ny < 0 || nx >= N || ny + 1 >= N) return false; 
+        if (board[ny][nx] || board[ny+1][nx]) return false; 
+    }
+    return true;
 }
+
 int solution(vector<vector<int>> board) {
-	int answer = 0, N = board.size(); 
-	table = board;
+    int answer = 0;
+    int visit[101][101][2]; 
+    memset(visit,0, sizeof(visit));
+    
+    int N = board.size(); 
+    
+    queue<Robot> robot; 
+    robot.push({0,0,0,0}); 
+    
+    int dx[4] = { -1, 1, 0, 0 }; 
+    int dy[4] = { 0, 0, -1, 1 };
+    
+    while (robot.size() != 0) {
+        Robot cur = robot.front();
+        robot.pop(); 
+        
+        // 종료조건 
+        if ((cur.state == 0 && cur.y == N-1 && cur.x == N-2) || (cur.state == 1 && cur.y == N-2 && cur.x == N-1))
+            return cur.ans;
+        
+        // 우선 상/하/좌/우 체크 
+        for (int i=0; i<4; i++) {
+            int nx = cur.x + dx[i];
+            int ny = cur.y + dy[i]; 
+            // 방문한적이 있거나 or 이동할 수 없다면 continue
+            if (!check_pos(board, ny,nx, cur.state,N) || visit[ny][nx][cur.state]) 
+                continue; 
+            // 위 조건이 아니라면 방문함 
+            visit[ny][nx][cur.state] = 1; 
+            robot.push({ny,nx,cur.state, cur.ans+1}); 
+        }
+        
+        // 현재 위치에서 회전이 가능한 경우 모두 push해준다! 
+        int y = cur.y; 
+        int x = cur.x; 
+        int ans = cur.ans + 1; 
+        
+        // 현재 가로일 경우
+        switch (cur.state) {
+            case 0 :
+        // 왼쪽을 축으로 회전할 경우
+            // 1. 아래로 회전 
+                // y,x를 기준으로 board의 y+1과 x+1의 값, y+1, x의 값을 확인한다.
+                // 또한 y+1 <= N-1 이고 x+1 <= N-1이어야 한다.
+                // 또한, 방문의 경우 visit[y][x][1]일 때를 확인한다. 
+                if (y+1 <= N-1 && !board[y+1][x] && !board[y+1][x+1] && !visit[y][x][1])
+                    robot.push({y,x,1,ans});
+            // 2. 위로 회전 
+                // y,x를 기준으로 board의 y-1과 x의 값, y-1,x+1의 값을 확인한다. 
+                // 또한 y-1 >=0 이고 x+1 <= N-1 이어야 한다. 
+                // 이번에는 방문의 경우 visit[y-1][x][1]일 때를 확인한다. 
+                if (y-1 >= 0 && !board[y-1][x] && !board[y-1][x+1] && !visit[y-1][x][1])
+                    robot.push({y-1,x,1,ans});
+        // 오른쪽을 축으로 회전할 경우 
+            // 1. 아래로 회전 
+                // y,x를 기준으로 board의 y+1과 x의 값, y+1, x+1의 값을 확인한다.
+                // 또한 y+1 <= N-1 이고 x+1 <= N-1이어야 한다.
+                // 또한, 방문의 경우 visit[y][x+1][1]일 때를 확인한다. 
+                if (y+1 <= N-1 && !board[y+1][x] && !board[y+1][x+1] && !visit[y][x+1][1])
+                    robot.push({y,x+1,1,ans});
+            // 2. 위로 회전
+                // y,x를 기준으로 board의 y-1과 x의 값, y-1,x+1의 값을 확인한다. 
+                // 또한 y-1 >=0 이고 x+1 <= N-1 이어야 한다. 
+                // 이번에는 방문의 경우 visit[y-1][x+1][1]일 때를 확인한다. 
+                if (y-1 >= 0  && !board[y-1][x] && !board[y-1][x+1] && !visit[y-1][x+1][1])
+                    robot.push({y-1,x+1,1,ans});
+                break;
+        // 현재 세로일 경우
+            case 1 :
+        // 위쪽을 축으로 회전할 경우
+            // 1. 오른쪽으로 회전 
+                // y,x를 기준으로 board의 y과 x+1의 값, y+1, x+1의 값을 확인한다.
+                // 또한 y+1 <= N-1 이고 x+1 <= N-1이어야 한다.
+                // 또한, 방문의 경우 visit[y][x][0]일 때를 확인한다. 
+                if (x+1 <= N-1 && !board[y][x+1] && !board[y+1][x+1] && !visit[y][x][0])
+                    robot.push({y,x,0,ans});
+            // 2. 왼쪽으로 회전 
+                // y,x를 기준으로 board의 y과 x-1의 값, y+1,x-1의 값을 확인한다. 
+                // 또한 y+1 <= N-1 이고 x-1 >= 0 이어야 한다. 
+                // 이번에는 방문의 경우 visit[y][x-1][0]일 때를 확인한다. 
+                if (x-1 >= 0 && !board[y+1][x-1] && !board[y][x-1] && !visit[y][x-1][0])
+                    robot.push({y,x-1,0,ans});
+        // 아래쪽을 축으로 회전할 경우 
+            // 1. 오른쪽으로 회전 
+                // y,x를 기준으로 board의 y과 x+1의 값, y+1, x+1의 값을 확인한다.
+                // 또한 y+1 <= N-1 이고 x+1 <= N-1이어야 한다.
+                // 또한, 방문의 경우 visit[y+1][x][0]일 때를 확인한다. 
+                if (x+1 <= N-1 && !board[y][x+1] && !board[y+1][x+1] && !visit[y+1][x][0])
+                    robot.push({y+1,x,0,ans});
+            // 2. 왼쪽으로 회전
+                // y,x를 기준으로 board의 y과 x-1의 값, y+1,x-1의 값을 확인한다. 
+                // 또한 y+1 <= N-1 이고 x-1 >= 0 이어야 한다. 
+                // 이번에는 방문의 경우 visit[y+1][x-1][0]일 때를 확인한다. 
+                if (x-1 >= 0 && !board[y][x-1] && !board[y+1][x-1] && !visit[y+1][x-1][0])
+                    robot.push({y+1,x-1,0,ans});
+                break;
+        }
+    }
 
-	memset(visit, 0, sizeof(visit));
-
-	queue<robot> q;
-	q.push({ 0, 0, 0, 0 });
-	while (!q.empty()) {
-		robot now = q.front(); 
-		q.pop();
-		if ((now.type == 0 && now.x == N - 1 && now.y == N - 2) || (now.type == 1 && now.x == N - 2 && now.y == N - 1)) {
-			return now.time;
-		}
-
-		for (int i = 0; i < 4; i++) { // 상하좌우 이동
-			int nx = now.x + dx[i];
-			int ny = now.y + dy[i];
-			if (!check(nx, ny, now.type) || visit[nx][ny][now.type]) continue; //이전에 방문한 적 있으면 건너뛰기
-			visit[nx][ny][now.type] = 1;
-			q.push({ now.time + 1, nx, ny, now.type });
-		}
-
-		//여기부터 회전
-		if (now.type == 0) { //가로
-			//오른쪽 칸이 축
-			if (now.x + 1 <= N - 1 && !table[now.x + 1][now.y] && !table[now.x + 1][now.y + 1] && !visit[now.x][now.y + 1][1]) {
-				q.push({ now.time + 1, now.x, now.y + 1, 1 });
-			}
-			if (now.x - 1 >= 0 && !table[now.x - 1][now.y] && !table[now.x - 1][now.y + 1] && !visit[now.x - 1][now.y + 1][1]) {
-				q.push({ now.time + 1, now.x - 1, now.y + 1, 1 });
-			}
-			//왼쪽 칸이 축
-			if (now.x + 1 <= N - 1 && !table[now.x + 1][now.y + 1] && !table[now.x + 1][now.y] && !visit[now.x][now.y][1]) {
-				q.push({ now.time + 1, now.x, now.y, 1 });
-			}
-			if (now.x - 1 >= 0 && !table[now.x - 1][now.y + 1] && !table[now.x - 1][now.y] && !visit[now.x - 1][now.y][1]) {
-				q.push({ now.time + 1, now.x - 1, now.y, 1 });
-			}
-		}
-		else { //세로
-		    //아래칸이 축
-			if (now.y - 1 >= 0 && !table[now.x][now.y - 1] && !table[now.x + 1][now.y - 1] && !visit[now.x + 1][now.y - 1][0]) {
-				q.push({ now.time + 1, now.x + 1, now.y - 1, 0 });
-			}
-			if (now.y + 1 <= N - 1 && !table[now.x][now.y + 1] && !table[now.x + 1][now.y + 1] && !visit[now.x + 1][now.y][0]) {
-				q.push({ now.time + 1, now.x + 1, now.y, 0 });
-			}
-			//위 칸이 축
-			if (now.y - 1 >= 0 && !table[now.x + 1][now.y - 1] && !table[now.x][now.y - 1] && !visit[now.x][now.y - 1][0]) {
-				q.push({ now.time + 1, now.x, now.y - 1, 0 });
-			}
-			if (now.y + 1 <= N - 1 && !table[now.x + 1][now.y + 1] && !table[now.x][now.y + 1] && !visit[now.x][now.y][0]) {
-				q.push({ now.time + 1, now.x, now.y, 0 });
-			}
-		}
-	}
 }
