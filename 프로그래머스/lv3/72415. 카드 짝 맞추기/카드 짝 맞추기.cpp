@@ -129,7 +129,10 @@ int back_track(int depth, vector<int> perm, int r, int c, vector<vector<int>> bo
     
     tmp[card[i][0].first][card[i][0].second] = 0; 
     tmp[card[i][1].first][card[i][1].second] = 0; 
-    
+    if (case1 == case2) {
+         return back_track(depth+1, perm, card[i][1].first, card[i][1].second, tmp, cnt + case1, card);
+        return back_track(depth+1, perm, card[i][0].first, card[i][0].second, tmp, cnt + case2, card);
+    }
     if (case1 < case2) { 
         return back_track(depth+1, perm, card[i][1].first, card[i][1].second, tmp, cnt + case1, card);
     }
