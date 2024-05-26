@@ -8,7 +8,7 @@ int N, M;
 int dx[4] = {1, -1, 0, 0}; 
 int dy[4] = {0, 0, 1, -1}; 
 
-bool check(const vector<vector<int>> &map, int cur_x, int cur_y) {
+bool check(vector<vector<int>> &map, int cur_x, int cur_y) {
     int cnt = 0; 
     for (int i=0; i<4; i++) {
         int nx = cur_x + dx[i]; 
